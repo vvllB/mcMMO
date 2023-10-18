@@ -249,9 +249,9 @@ public class InventoryListener implements Listener {
                     int amount = cursor.getAmount();
 
                     if (click == ClickType.LEFT || (click == ClickType.RIGHT && amount == 1)) {
-                        event.setCancelled(true);
-                        event.setCurrentItem(cursor.clone());
-                        event.setCursor(null);
+//                        event.setCancelled(true);
+//                        event.setCurrentItem(cursor.clone());
+//                        event.setCursor(null);
 
                         AlchemyPotionBrewer.scheduleUpdate(inventory);
                         AlchemyPotionBrewer.scheduleCheck(player, stand);

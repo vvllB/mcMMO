@@ -1,5 +1,7 @@
 package com.gmail.nossr50.runnables.skills;
 
+import com.Zrips.CMI.CMI;
+import com.Zrips.CMI.Modules.Holograms.CMIHologram;
 import com.gmail.nossr50.datatypes.skills.PrimarySkillType;
 import com.gmail.nossr50.datatypes.skills.SubSkillType;
 import com.gmail.nossr50.events.skills.alchemy.McMMOPlayerBrewEvent;
@@ -65,6 +67,19 @@ public class AlchemyBrewTask extends CancellableRunnable {
         mcMMO.p.getFoliaLib().getImpl().runAtLocationTimer(location, this, 1, 1);
     }
 
+    private CMIHologram as = null;
+
+    private double totalTime = 0;
+
+    @Override
+    public void cancel() {
+        if (as != null) {
+            as.remove();
+        }
+        super.cancel();
+    }
+
+
     @Override
     public void run() {
         if (player == null || !player.isValid() || brewingStand == null || brewingStand.getType() != Material.BREWING_STAND || !AlchemyPotionBrewer.isValidIngredient(player, ((BrewingStand) brewingStand).getInventory().getContents()[Alchemy.INGREDIENT_SLOT])) {
@@ -78,8 +93,18 @@ public class AlchemyBrewTask extends CancellableRunnable {
         }
 
         if (firstRun) {
+            CMI plugin = (CMI) player.getServer().getPluginManager().getPlugin("CMI");
+            as = new CMIHologram("inRefining", new Location(location.getWorld(),
+                    location.getX() + 0.5,
+                    location.getY() + 1.25,
+                    location.getZ() + 0.5
+            ));
+            totalTime = brewTimer;
             firstRun = false;
             ((BrewingStand) brewingStand).setFuelLevel(fuel);
+            as.setLine(0, "§d§l炼制中0.00%%");
+            plugin.getHologramManager().addHologram(as);
+            as.update();
         }
 
         brewTimer -= brewSpeed;
@@ -90,6 +115,8 @@ public class AlchemyBrewTask extends CancellableRunnable {
             finish();
         }
         else {
+            as.setLine(0, String.format("§d§l炼制中%.2f%%", (1 - brewTimer / totalTime) * 100.0));
+            as.update();
             ((BrewingStand) brewingStand).setBrewingTime((int) brewTimer);
         }
     }

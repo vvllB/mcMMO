@@ -4,17 +4,22 @@ import com.gmail.nossr50.config.LegacyConfigLoader;
 import com.gmail.nossr50.datatypes.skills.alchemy.AlchemyPotion;
 import com.gmail.nossr50.mcMMO;
 import com.gmail.nossr50.util.LogUtils;
+import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class PotionConfig extends LegacyConfigLoader {
     private static PotionConfig instance;
@@ -52,14 +57,22 @@ public class PotionConfig extends LegacyConfigLoader {
     private void loadConcoctions() {
         ConfigurationSection concoctionSection = config.getConfigurationSection("Concoctions");
 
-        loadConcoctionsTier(concoctionsIngredientsTierOne, concoctionSection.getStringList("Tier_One_Ingredients"));
-        loadConcoctionsTier(concoctionsIngredientsTierTwo, concoctionSection.getStringList("Tier_Two_Ingredients"));
-        loadConcoctionsTier(concoctionsIngredientsTierThree, concoctionSection.getStringList("Tier_Three_Ingredients"));
-        loadConcoctionsTier(concoctionsIngredientsTierFour, concoctionSection.getStringList("Tier_Four_Ingredients"));
-        loadConcoctionsTier(concoctionsIngredientsTierFive, concoctionSection.getStringList("Tier_Five_Ingredients"));
-        loadConcoctionsTier(concoctionsIngredientsTierSix, concoctionSection.getStringList("Tier_Six_Ingredients"));
-        loadConcoctionsTier(concoctionsIngredientsTierSeven, concoctionSection.getStringList("Tier_Seven_Ingredients"));
-        loadConcoctionsTier(concoctionsIngredientsTierEight, concoctionSection.getStringList("Tier_Eight_Ingredients"));
+        loadConcoctionsTier(concoctionsIngredientsTierOne, concoctionSection.getConfigurationSection("Tier_One_Ingredients").getStringList("SAMPLE"));
+        addCustomItem(concoctionSection, "Tier_One_Ingredients", 1);
+        loadConcoctionsTier(concoctionsIngredientsTierTwo, concoctionSection.getConfigurationSection("Tier_Two_Ingredients").getStringList("SAMPLE"));
+        addCustomItem(concoctionSection, "Tier_Two_Ingredients", 2);
+        loadConcoctionsTier(concoctionsIngredientsTierThree, concoctionSection.getConfigurationSection("Tier_Three_Ingredients").getStringList("SAMPLE"));
+        addCustomItem(concoctionSection, "Tier_Three_Ingredients", 3);
+        loadConcoctionsTier(concoctionsIngredientsTierFour, concoctionSection.getConfigurationSection("Tier_Four_Ingredients").getStringList("SAMPLE"));
+        addCustomItem(concoctionSection, "Tier_Four_Ingredients", 4);
+        loadConcoctionsTier(concoctionsIngredientsTierFive, concoctionSection.getConfigurationSection("Tier_Five_Ingredients").getStringList("SAMPLE"));
+        addCustomItem(concoctionSection, "Tier_Five_Ingredients", 5);
+        loadConcoctionsTier(concoctionsIngredientsTierSix, concoctionSection.getConfigurationSection("Tier_Six_Ingredients").getStringList("SAMPLE"));
+        addCustomItem(concoctionSection, "Tier_Six_Ingredients", 6);
+        loadConcoctionsTier(concoctionsIngredientsTierSeven, concoctionSection.getConfigurationSection("Tier_Seven_Ingredients").getStringList("SAMPLE"));
+        addCustomItem(concoctionSection, "Tier_Seven_Ingredients", 7);
+        loadConcoctionsTier(concoctionsIngredientsTierEight, concoctionSection.getConfigurationSection("Tier_Eight_Ingredients").getStringList("SAMPLE"));
+        addCustomItem(concoctionSection, "Tier_Eight_Ingredients", 8);
 
         concoctionsIngredientsTierTwo.addAll(concoctionsIngredientsTierOne);
         concoctionsIngredientsTierThree.addAll(concoctionsIngredientsTierTwo);
@@ -68,6 +81,121 @@ public class PotionConfig extends LegacyConfigLoader {
         concoctionsIngredientsTierSix.addAll(concoctionsIngredientsTierFive);
         concoctionsIngredientsTierSeven.addAll(concoctionsIngredientsTierSix);
         concoctionsIngredientsTierEight.addAll(concoctionsIngredientsTierSeven);
+    }
+
+    private void addCustomItem(ConfigurationSection config, String key, int tier) {
+        ConfigurationSection optionList = config.getConfigurationSection(key).getConfigurationSection("CUSTOM");
+        if (optionList == null) {
+            return;
+        }
+        Set<String> keyList = optionList.getKeys(false);
+        if (keyList.isEmpty()) {
+            return;
+        }
+        for (String s : keyList) {
+            Material material = Material.getMaterial(s);
+            ItemStack itemStack = new CustomItemStack(material);
+            ItemMeta itemMeta = itemStack.getItemMeta();
+            itemMeta.setDisplayName(resultDisplayName(optionList.getConfigurationSection(s).getString("Display")));
+            itemMeta.setLore(getLore(optionList.getConfigurationSection(s).getStringList("Lore")));
+            for (String enchantments : optionList.getConfigurationSection(s).getStringList("Enchantments")) {
+                String[] split = enchantments.split(":");
+                itemMeta.addEnchant(Enchantment.getByName(split[0]), Integer.parseInt(split[1]), true);
+            }
+            for (String tag : optionList.getConfigurationSection(s).getStringList("Hide")) {
+                itemMeta.addItemFlags(ItemFlag.valueOf("HIDE_" + tag));
+            }
+            itemStack.setItemMeta(itemMeta);
+            itemStack.isSimilar(itemStack);
+            getIngredients(tier).add(itemStack);
+
+        }
+    }
+
+    private String resultDisplayName(String display) {
+        display = display.replaceAll("&", "§");
+        if (display.indexOf("§") == -1) {
+            display = "§f" + display;
+        }
+        return display;
+    }
+
+    public static class CustomItemStack extends ItemStack {
+
+        public CustomItemStack(@NotNull Material type) {
+            super(type);
+        }
+        @Override
+        public boolean isSimilar(@Nullable ItemStack stack) {
+            if (stack == null) {
+                return false;
+            }
+            if (stack == this) {
+                return true;
+            }
+            // This may be called from legacy item stacks, try to get the right material
+            Material comparisonType = (super.getType().isLegacy()) ? Bukkit.getUnsafe().fromLegacy(this.getData(), true) : super.getType();
+            boolean metaSame = hasItemMeta() ? ComparisonMeta(getItemMeta(), stack.getItemMeta()) : true;
+
+            return comparisonType == stack.getType() &&
+                    getDurability() == stack.getDurability() &&
+                    hasItemMeta() == stack.hasItemMeta() &&
+                    metaSame;
+        }
+    }
+
+    private static boolean ComparisonMeta(ItemMeta a, ItemMeta b) {
+        Set<ItemFlag> aItemFlags = a.getItemFlags();
+        Set<ItemFlag> bItemFlags = b.getItemFlags();
+        if (aItemFlags == null ^ bItemFlags == null) {
+            return false;
+        }
+        if (aItemFlags.size() != bItemFlags.size()) {
+            return false;
+        }
+        for (ItemFlag itemFlag : aItemFlags) {
+            if (!bItemFlags.contains(itemFlag)) {
+                return false;
+            }
+        }
+        List<String> aLore = a.getLore();
+        List<String> bLore = b.getLore();
+        if (aLore == null ^ bLore == null) {
+            return false;
+        }
+        if (aLore.size() != bLore.size()) {
+            return false;
+        }
+        for (int i = 0; i < aLore.size(); i++) {
+            if (!StringUtils.equals(aLore.get(i), bLore.get(i))) {
+                return false;
+            }
+        }
+        Map<Enchantment, Integer> aEnchants = a.getEnchants();
+        Map<Enchantment, Integer> bEnchants = b.getEnchants();
+        if (aEnchants == null ^ bEnchants == null) {
+            return false;
+        }
+        if (aEnchants.size() != bEnchants.size()) {
+            return false;
+        }
+        for (Enchantment enchantment : aEnchants.keySet()) {
+            if (!bEnchants.containsKey(enchantment)) {
+                return false;
+            }
+            if (!aEnchants.get(enchantment).equals(bEnchants.get(enchantment))) {
+                return false;
+            }
+        }
+        return StringUtils.equals(a.getDisplayName(), b.getDisplayName());
+    }
+
+    private List getLore(List<String> listStr) {
+        List<String> ret = Lists.newArrayList();
+        for (String s : listStr) {
+            ret.add(s.replaceAll("&", "§"));
+        }
+        return ret;
     }
 
     private void loadConcoctionsTier(List<ItemStack> ingredientList, List<String> ingredientStrings) {

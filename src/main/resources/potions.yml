@@ -4,40 +4,56 @@
 ###
 Concoctions:
     Tier_One_Ingredients:
-        - BLAZE_POWDER
-        - FERMENTED_SPIDER_EYE
-        - GHAST_TEAR
-        - GLOWSTONE_DUST
-        - GOLDEN_CARROT
-        - MAGMA_CREAM
-        - NETHER_WART
-        - REDSTONE
-        - GLISTERING_MELON_SLICE
-        - SPIDER_EYE
-        - SUGAR
-        - GUNPOWDER
-        - WATER_LILY
-        - PUFFERFISH
-        - DRAGON_BREATH
+        SAMPLE:
+            - BLAZE_POWDER # 烈焰粉
+            - FERMENTED_SPIDER_EYE # 发酵蜘蛛眼
+            - GHAST_TEAR # 恶魂之泪
+            - GLOWSTONE_DUST # 荧石粉
+            - GOLDEN_CARROT # 金胡萝卜
+            - MAGMA_CREAM # 岩浆膏
+            - NETHER_WART # 地狱疣
+            - REDSTONE # 红石粉
+            - GLISTERING_MELON_SLICE # 金西瓜片
+            - SPIDER_EYE # 蜘蛛眼
+            - SUGAR # 糖
+            - GUNPOWDER # 火药
+            - WATER_LILY #
+            - PUFFERFISH # 河豚
+            - DRAGON_BREATH # 龙息
+        CUSTOM:
     Tier_Two_Ingredients:
-        - CARROT
-        - SLIME_BALL
-        - PHANTOM_MEMBRANE
+        SAMPLE:
+            - CARROT # 胡萝卜
+            - SLIME_BALL # 史莱姆球
+            - PHANTOM_MEMBRANE # 幻翼膜
+        CUSTOM:
     Tier_Three_Ingredients:
-        - QUARTZ
-        - RABBIT_FOOT
+        SAMPLE:
+            - QUARTZ # 石英
+            - RABBIT_FOOT # 兔子脚
+        CUSTOM:
     Tier_Four_Ingredients:
-        - APPLE
-        - ROTTEN_FLESH
+        SAMPLE:
+            - APPLE # 苹果
+            - ROTTEN_FLESH # 腐肉
+        CUSTOM:
     Tier_Five_Ingredients:
-        - BROWN_MUSHROOM
-        - INK_SAC
+        SAMPLE:
+            - BROWN_MUSHROOM # 棕色蘑菇
+            - INK_SAC # 墨囊
+        CUSTOM:
     Tier_Six_Ingredients:
-        - FERN
+        SAMPLE:
+            - FERN # 蕨
+        CUSTOM:
     Tier_Seven_Ingredients:
-        - POISONOUS_POTATO
+        SAMPLE:
+            - POISONOUS_POTATO # 毒土豆
+        CUSTOM:
     Tier_Eight_Ingredients:
-        - GOLDEN_APPLE
+        SAMPLE:
+            - GOLDEN_APPLE # 金苹果
+        CUSTOM:
 
 #
 # Settings for Potions

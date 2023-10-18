@@ -11,7 +11,6 @@ import org.bukkit.potion.PotionEffect;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 public class AlchemyPotion {
     private final Material material;
@@ -120,11 +119,23 @@ public class AlchemyPotion {
     }
 
     public AlchemyPotion getChild(ItemStack ingredient) {
+        beg:for (int i = 1; i <= 8; i++) {
+            List<ItemStack> ingredients = PotionConfig.getInstance().getIngredients(i);
+            for (ItemStack found : ingredients) {
+                if (found.isSimilar(ingredient)) {
+                    ingredient = found;
+                    break beg;
+                }
+            }
+        }
         if (!children.isEmpty()) {
-            for (Entry<ItemStack, String> child : children.entrySet()) {
-                if (ingredient.isSimilar(child.getKey())) {
+            if (ingredient instanceof PotionConfig.CustomItemStack) {
+                ItemStack data = new ItemStack(ingredient.getType());
+                if (data.isSimilar(child.getKey())) {
                     return PotionConfig.getInstance().getPotion(child.getValue());
                 }
+            } else if (ingredient.isSimilar(child.getKey())) {
+                return PotionConfig.getInstance().getPotion(child.getValue());
             }
         }
         return null;
