@@ -53,7 +53,7 @@ public class AlchemyPotion {
                 meta.addCustomEffect(effect, true);
             }
         }
-        
+
         if (this.getColor() != null) {
             meta.setColor(this.getColor());
         }
@@ -105,11 +105,11 @@ public class AlchemyPotion {
     public Color getColor() {
         return color;
     }
-    
+
     public void setColor(Color color) {
         this.color = color;
     }
-    
+
     public Map<ItemStack, String> getChildren() {
         return children;
     }
@@ -119,7 +119,8 @@ public class AlchemyPotion {
     }
 
     public AlchemyPotion getChild(ItemStack ingredient) {
-        beg:for (int i = 1; i <= 8; i++) {
+        beg:
+        for (int i = 1; i <= 8; i++) {
             List<ItemStack> ingredients = PotionConfig.getInstance().getIngredients(i);
             for (ItemStack found : ingredients) {
                 if (found.isSimilar(ingredient)) {
@@ -129,13 +130,15 @@ public class AlchemyPotion {
             }
         }
         if (!children.isEmpty()) {
-            if (ingredient instanceof PotionConfig.CustomItemStack) {
-                ItemStack data = new ItemStack(ingredient.getType());
-                if (data.isSimilar(child.getKey())) {
+            for (Map.Entry<ItemStack, String> child : children.entrySet()) {
+                if (ingredient instanceof PotionConfig.CustomItemStack) {
+                    ItemStack data = new ItemStack(ingredient.getType());
+                    if (data.isSimilar(child.getKey())) {
+                        return PotionConfig.getInstance().getPotion(child.getValue());
+                    }
+                } else if (ingredient.isSimilar(child.getKey())) {
                     return PotionConfig.getInstance().getPotion(child.getValue());
                 }
-            } else if (ingredient.isSimilar(child.getKey())) {
-                return PotionConfig.getInstance().getPotion(child.getValue());
             }
         }
         return null;
