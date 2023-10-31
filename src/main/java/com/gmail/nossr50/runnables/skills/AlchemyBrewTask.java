@@ -1,7 +1,5 @@
 package com.gmail.nossr50.runnables.skills;
 
-import com.Zrips.CMI.CMI;
-import com.Zrips.CMI.Modules.Holograms.CMIHologram;
 import com.gmail.nossr50.datatypes.skills.PrimarySkillType;
 import com.gmail.nossr50.datatypes.skills.SubSkillType;
 import com.gmail.nossr50.events.skills.alchemy.McMMOPlayerBrewEvent;
@@ -13,15 +11,23 @@ import com.gmail.nossr50.util.CancellableRunnable;
 import com.gmail.nossr50.util.Misc;
 import com.gmail.nossr50.util.Permissions;
 import com.gmail.nossr50.util.player.UserManager;
+import eu.decentsoftware.holograms.api.DHAPI;
+import eu.decentsoftware.holograms.api.holograms.Hologram;
+import eu.decentsoftware.holograms.plugin.DecentHologramsPlugin;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.BrewingStand;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+
+import java.util.Collections;
+
+import static com.gmail.nossr50.skills.alchemy.AlchemyPotionBrewer.scheduleUpdate;
 
 public class AlchemyBrewTask extends CancellableRunnable {
     private static final double DEFAULT_BREW_SPEED = 1.0;
-    private static final int    DEFAULT_BREW_TICKS = 400;
+    private static final int DEFAULT_BREW_TICKS = 400;
 
     private final BlockState brewingStand;
     private final Location location;
@@ -30,6 +36,9 @@ public class AlchemyBrewTask extends CancellableRunnable {
     private final Player player;
     private int fuel;
     private boolean firstRun = true;
+    private double totalTime = 0;
+
+    private Hologram inRefining;
 
     public AlchemyBrewTask(BlockState brewingStand, Player player) {
         this.brewingStand = brewingStand;
@@ -57,24 +66,29 @@ public class AlchemyBrewTask extends CancellableRunnable {
         if (Alchemy.brewingStandMap.containsKey(location)) {
             Alchemy.brewingStandMap.get(location).cancel();
         }
-
         fuel = ((BrewingStand) brewingStand).getFuelLevel();
-
-        if (((BrewingStand) brewingStand).getBrewingTime() == -1) // Only decrement on our end if it isn't a vanilla ingredient.
-            fuel--;
+//        int brewingTime = ((BrewingStand) brewingStand).getBrewingTime();
+//        if (brewingTime == 0) // Only decrement on our end if it isn't a vanilla ingredient.
+        fuel--;
 
         Alchemy.brewingStandMap.put(location, this);
         mcMMO.p.getFoliaLib().getImpl().runAtLocationTimer(location, this, 1, 1);
+
+        totalTime = brewTimer;
+        DecentHologramsPlugin plugin = (DecentHologramsPlugin) player.getServer().getPluginManager().getPlugin("DecentHolograms");
+        if (plugin != null) {
+            inRefining = DHAPI.createHologram("inRefining", new Location(location.getWorld(),
+                    location.getX() + 0.5,
+                    location.getY() + 1.25,
+                    location.getZ() + 0.5
+            ), Collections.singletonList("§d§l炼制中0.00%"));
+        }
     }
-
-    private CMIHologram as = null;
-
-    private double totalTime = 0;
 
     @Override
     public void cancel() {
-        if (as != null) {
-            as.remove();
+        if (inRefining != null) {
+            inRefining.destroy();
         }
         super.cancel();
     }
@@ -86,37 +100,33 @@ public class AlchemyBrewTask extends CancellableRunnable {
             if (Alchemy.brewingStandMap.containsKey(location)) {
                 Alchemy.brewingStandMap.remove(location);
             }
-
             this.cancel();
-
             return;
         }
 
         if (firstRun) {
-            CMI plugin = (CMI) player.getServer().getPluginManager().getPlugin("CMI");
-            as = new CMIHologram("inRefining", new Location(location.getWorld(),
-                    location.getX() + 0.5,
-                    location.getY() + 1.25,
-                    location.getZ() + 0.5
-            ));
-            totalTime = brewTimer;
             firstRun = false;
             ((BrewingStand) brewingStand).setFuelLevel(fuel);
-            as.setLine(0, "§d§l炼制中0.00%%");
-            plugin.getHologramManager().addHologram(as);
-            as.update();
+
+            ItemStack ingredient = ((BrewingStand) brewingStand).getInventory().getIngredient();
+            ItemStack[] contents = ((BrewingStand) brewingStand).getInventory().getContents();
+            brewingStand.update();
+            ((BrewingStand) brewingStand).getInventory().setIngredient(ingredient);
+            ((BrewingStand) brewingStand).getInventory().setContents(contents);
+            scheduleUpdate(((BrewingStand) brewingStand).getInventory());
         }
 
+        DecentHologramsPlugin plugin = (DecentHologramsPlugin) player.getServer().getPluginManager().getPlugin("DecentHolograms");
+        if (plugin != null) {
+            DHAPI.setHologramLines(inRefining, Collections.singletonList(String.format("§d§l炼制中%.2f%%", (1 - brewTimer / totalTime) * 100.0)));
+        }
         brewTimer -= brewSpeed;
 
         // Vanilla potion brewing completes when BrewingTime == 1
         if (brewTimer < Math.max(brewSpeed, 2)) {
             this.cancel();
             finish();
-        }
-        else {
-            as.setLine(0, String.format("§d§l炼制中%.2f%%", (1 - brewTimer / totalTime) * 100.0));
-            as.update();
+        } else {
             ((BrewingStand) brewingStand).setBrewingTime((int) brewTimer);
         }
     }

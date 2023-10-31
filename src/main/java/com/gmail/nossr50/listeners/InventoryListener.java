@@ -19,6 +19,7 @@ import com.gmail.nossr50.worldguard.WorldGuardUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.BrewingStand;
@@ -28,6 +29,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BrewingStartEvent;
 import org.bukkit.event.inventory.*;
 import org.bukkit.inventory.*;
 
@@ -274,6 +276,21 @@ public class InventoryListener implements Listener {
                 }
             }
         }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void startBrewingStart(BrewingStartEvent event) {
+        Location location = event.getBlock().getLocation();
+        World world = location.getWorld();
+        Block block = world.getBlockAt(location);
+
+        if (block.getState() instanceof BrewingStand) {
+            BrewingStand brewingStand = (BrewingStand) block.getState();
+            // 现在你可以使用brewingStand变量来操作BrewingStand实体
+            brewingStand.setFuelLevel(brewingStand.getFuelLevel() + 1);
+            brewingStand.update();
+        }
+
     }
 
     public boolean isOutsideWindowClick(InventoryClickEvent event) {
