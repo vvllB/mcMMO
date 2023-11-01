@@ -22,6 +22,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Collections;
+import java.util.UUID;
 
 import static com.gmail.nossr50.skills.alchemy.AlchemyPotionBrewer.scheduleUpdate;
 
@@ -77,7 +78,7 @@ public class AlchemyBrewTask extends CancellableRunnable {
         totalTime = brewTimer;
         DecentHologramsPlugin plugin = (DecentHologramsPlugin) player.getServer().getPluginManager().getPlugin("DecentHolograms");
         if (plugin != null) {
-            inRefining = DHAPI.createHologram("inRefining", new Location(location.getWorld(),
+            inRefining = DHAPI.createHologram(UUID.randomUUID().toString(), new Location(location.getWorld(),
                     location.getX() + 0.5,
                     location.getY() + 1.25,
                     location.getZ() + 0.5
