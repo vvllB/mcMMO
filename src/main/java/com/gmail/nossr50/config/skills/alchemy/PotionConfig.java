@@ -136,10 +136,14 @@ public class PotionConfig extends LegacyConfigLoader {
             // This may be called from legacy item stacks, try to get the right material
             Material comparisonType = (super.getType().isLegacy()) ? Bukkit.getUnsafe().fromLegacy(this.getData(), true) : super.getType();
             boolean metaSame = hasItemMeta() ? ComparisonMeta(getItemMeta(), stack.getItemMeta()) : true;
-
+            boolean displayNameSame = StringUtils.equals(
+                    getItemMeta().getDisplayName().replaceAll("§\\S", ""),
+                    stack.getItemMeta().getDisplayName().replaceAll("§\\S", "")
+                    );
             return comparisonType == stack.getType() &&
                     getDurability() == stack.getDurability() &&
                     hasItemMeta() == stack.hasItemMeta() &&
+                    displayNameSame &&
                     metaSame;
         }
     }
@@ -167,7 +171,7 @@ public class PotionConfig extends LegacyConfigLoader {
             return false;
         }
         for (int i = 0; i < aLore.size(); i++) {
-            if (!StringUtils.equals(aLore.get(i), bLore.get(i))) {
+            if (!StringUtils.equals(aLore.get(i).replaceAll("§\\S", ""), bLore.get(i).replaceAll("§\\S", ""))) {
                 return false;
             }
         }
