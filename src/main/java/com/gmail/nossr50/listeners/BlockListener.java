@@ -7,6 +7,7 @@ import com.gmail.nossr50.config.experience.ExperienceConfig;
 import com.gmail.nossr50.datatypes.meta.BonusDropMeta;
 import com.gmail.nossr50.datatypes.player.McMMOPlayer;
 import com.gmail.nossr50.datatypes.skills.PrimarySkillType;
+import com.gmail.nossr50.datatypes.skills.SubSkillType;
 import com.gmail.nossr50.datatypes.skills.SuperAbilityType;
 import com.gmail.nossr50.datatypes.skills.ToolType;
 import com.gmail.nossr50.events.fake.FakeBlockBreakEvent;
@@ -22,20 +23,26 @@ import com.gmail.nossr50.skills.salvage.Salvage;
 import com.gmail.nossr50.skills.woodcutting.WoodcuttingManager;
 import com.gmail.nossr50.util.*;
 import com.gmail.nossr50.util.player.UserManager;
+import com.gmail.nossr50.util.skills.RankUtils;
 import com.gmail.nossr50.util.skills.SkillUtils;
 import com.gmail.nossr50.util.sounds.SoundManager;
 import com.gmail.nossr50.util.sounds.SoundType;
 import com.gmail.nossr50.worldguard.WorldGuardManager;
 import com.gmail.nossr50.worldguard.WorldGuardUtils;
+import com.google.common.collect.Sets;
+import com.sk89q.worldguard.bukkit.event.block.BreakBlockEvent;
 import org.bukkit.*;
 import org.bukkit.block.*;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
 
 import java.util.HashSet;
 
@@ -653,6 +660,54 @@ public class BlockListener implements Listener {
         else if (mcMMOPlayer.getWoodcuttingManager().canUseLeafBlower(heldItem) && BlockUtils.isNonWoodPartOfTree(blockState) && EventUtils.simulateBlockBreak(block, player)) {
             event.setInstaBreak(true);
             SoundManager.sendSound(player, block.getLocation(), SoundType.POP);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onBlockDamageCleanup(PlayerInteractEvent event) {
+        Action action = event.getAction();
+        if (action != Action.LEFT_CLICK_AIR) {
+            return;
+        }
+        Player player = event.getPlayer();
+        ItemStack heldItem = player.getInventory().getItemInMainHand();
+        if (!UserManager.hasPlayerDataKey(player)) {
+            return;
+        }
+        McMMOPlayer mcMMOPlayer = UserManager.getPlayer(player);
+        if (!mcMMOPlayer.getWoodcuttingManager().canUseLeafBlower(heldItem)) {
+            return;
+        }
+        int baseDistance = 10;
+        int unlockLevel = RankUtils.getUnlockLevel(SubSkillType.WOODCUTTING_LEAF_BLOWER);
+        int skillLevel = mcMMOPlayer.getSkillLevel(PrimarySkillType.WOODCUTTING);
+        baseDistance += (skillLevel - unlockLevel == 0 ? 0 : (skillLevel - unlockLevel) / 10 * 4);
+        Block targetBlockExact = player.getTargetBlock(Sets.newHashSet(Material.AIR), baseDistance);
+        if (targetBlockExact == null) {
+            return;
+        }
+        BlockDamageEvent blockDamageEvent = new BlockDamageEvent(player, targetBlockExact, heldItem, false);
+        Bukkit.getPluginManager().callEvent(
+                blockDamageEvent
+        );
+
+        if (blockDamageEvent.getInstaBreak()) {
+            Integer level = heldItem.getEnchantments().getOrDefault(Enchantment.DURABILITY, 0);
+            double prob = 100.0 / (1 + level);
+            if (Math.random() * 100 <= prob) {
+                int damage = ((Damageable) heldItem.getItemMeta()).getDamage();
+                ((Damageable) heldItem.getItemMeta()).setDamage(damage - 1);
+                player.getInventory().setItemInMainHand(heldItem);
+            }
+            BlockBreakEvent blockBreakEvent = new BlockBreakEvent(targetBlockExact, player);
+            Bukkit.getPluginManager().callEvent(
+                    blockBreakEvent
+            );
+            if (!blockBreakEvent.isCancelled()) {
+                player.breakBlock(targetBlockExact);
+                SoundManager.sendSound(player, player.getLocation(), SoundType.POP);
+            }
+
         }
     }
 

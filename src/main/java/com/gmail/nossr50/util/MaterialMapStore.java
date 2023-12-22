@@ -161,7 +161,9 @@ public class MaterialMapStore {
 
     public boolean isTreeFellerDestructible(@NotNull Material material)
     {
-        return treeFellerDestructibleWhiteList.contains(material.getKey().getKey());
+        return treeFellerDestructibleWhiteList.contains(material.getKey().getKey()) ||
+                material.name().endsWith("GLASS") ||
+                material.name().endsWith("GLASS_PANE");
     }
 
     public boolean isHerbalismAbilityWhiteListed(@NotNull Material material)
